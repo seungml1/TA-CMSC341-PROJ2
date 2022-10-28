@@ -80,9 +80,14 @@ class Tester{
     /******************************************
     * Test function declarations go here! *
     ******************************************/
+    uint countNumTigers(Streak & streak) {
+        return streak.countNumTigers();
+    }
 };
 
 int main(){
+    Tester tester;
+
     Random idGen(MINID,MAXID);
     Random ageGen(0,2);
     Random genderGen(0,2);
@@ -92,7 +97,6 @@ int main(){
         int tempID = 0;
         int ID = 0;
         for(int i=0;i<streakSize;i++){
-            cout << "Loop " << i << endl;
             ID = idGen.getRandNum();
             if (i == streakSize / 2) tempID = ID;//we store this ID for later use
             Tiger tiger(ID,
@@ -100,18 +104,20 @@ int main(){
                         static_cast<GENDER>(genderGen.getRandNum()));
             streak.insert(tiger);
         }
-        cout << "\nDump after inserting " << streakSize << " nodes:\n\n";
+        cout << endl << "Dump after inserting " << streakSize << " nodes:" << endl;
         streak.dumpTree();
-        cout << "\n\nList of Tigers after inserting " << streakSize << " nodes:\n";
+        cout << endl << endl;
+        cout << "Num tigers: " << to_string(tester.countNumTigers(streak)) << endl << endl;
+        cout << "List of Tigers after inserting " << streakSize << " nodes:" << endl;
         streak.listTigers();
-        cout << endl;
 
         streak.remove(tempID);
-        cout << "\nDump after removig the node with ID: " << tempID << "\n\n";
+        cout << endl << "Dump after removig the node with ID: " << tempID << endl;
         streak.dumpTree();
-        cout << "\n\nList of Tigers after removing the node with ID: " << tempID << "\n";
+        cout << endl << endl;
+        cout << "Num tigers: " << to_string(tester.countNumTigers(streak)) << endl << endl;
+        cout << "List of Tigers after removing the node with ID: " << tempID << endl;
         streak.listTigers();
-        cout << endl;
     }
 
     return 0;

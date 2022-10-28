@@ -125,7 +125,9 @@ int Streak::countTigerCubs() const{
   return (int) foldNumTigerCubs(m_root);
 }
 
-//Private functions below
+/***************************
+ * Private functions below *
+ ***************************/
 
 bool Streak::isEmpty(Tiger * tiger) const {
   return tiger == nullptr;
@@ -217,7 +219,7 @@ string Streak::concatInOrder(Tiger tiger) const {
   if (isLeaf(tiger)) {
     return tigerInfo;
   }
-  else if(hasLeftChildOnly(tiger)) {
+  else if (hasLeftChildOnly(tiger)) {
     return concatInOrder(*tiger.m_left)
            .append(tigerInfo);
   }
@@ -233,10 +235,14 @@ string Streak::concatInOrder(Tiger tiger) const {
 }
 
 string Streak::printTiger(Tiger tiger) const {
-  return std::to_string(tiger.getID()).append(":").append(tiger.getAgeStr()).append(":").append(tiger.getGenderStr()).append(":").append(tiger.getStateStr());
+  return std::to_string(tiger.getID())
+    .append(":")
+    .append(tiger.getAgeStr())
+    .append(":")
+    .append(tiger.getGenderStr())
+    .append(":").append(tiger.getStateStr());
 }
 
-//-------
 Tiger * Streak::getTigerWithId(int id, Tiger * tiger) const {
   if (isEmpty(tiger)) {
     return nullptr;
@@ -351,7 +357,7 @@ Tiger * Streak::removeTigerWithID(int id, Tiger * tiger) {
     return tiger;
   }
   else if (id == tiger -> getID()) {
-    return remove(tiger);
+    return replace(tiger);
   }
   else if (id < tiger -> getID()) {
     return rebalance(setHeight(constructTiger
@@ -375,11 +381,10 @@ Tiger * Streak::removeDeadTigers(Tiger * tiger) {
     return tiger;
   }
   else if (isDeadTiger(*tiger)) {
-    tiger = rebalance(setHeight(constructTiger
+    return replace(rebalance(setHeight(constructTiger
       ( removeDeadTigers(tiger -> m_left)
       , tiger
-      , removeDeadTigers(tiger -> m_left))));
-    return remove(tiger);
+      , removeDeadTigers(tiger -> m_left)))));
   }
   else {
     return rebalance(setHeight(constructTiger
@@ -390,11 +395,14 @@ Tiger * Streak::removeDeadTigers(Tiger * tiger) {
 }
 
 Tiger * Streak::clearRecursively(Tiger * tiger) {
-  if (isEmpty(tiger) || isLeaf(*tiger)) {
-    return remove(tiger);
+  if (isEmpty(tiger)) {
+    return tiger;
+  }
+  else if (isLeaf(*tiger)) {
+    return replace(tiger);
   }
   else {
-    return remove(constructTiger
+    return replace(constructTiger
       ( clearRecursively(tiger -> m_left)
       , tiger
       , clearRecursively(tiger -> m_right)));
@@ -450,6 +458,23 @@ Tiger * Streak::remove(Tiger * tiger) {
   }
 }
 
+Tiger * Streak::replace(Tiger * tiger) {
+  if (isEmpty(tiger)) {
+    return tiger;
+  }
+  else if (isLeaf(*tiger)) {
+    delete tiger;
+    return nullptr;
+  }
+  else if (hasLeftChild(*tiger)) {
+    return removeCurrReplaceWithPredecessor(tiger);
+  }
+  else {
+    return removeCurrReplaceWithSuccessor(tiger);
+  }
+}
+
+
 bool Streak::isDeadTiger(Tiger tiger) const {
   return tiger.m_state == DEAD;
 }
@@ -471,11 +496,6 @@ Tiger * Streak::extractMin(Tiger * tiger) {
   }
 }
 
-/* This can be implemented in two ways: prev is never null, or curr is
- * never null. Prev never being null means that I have to account for
- * a leaf left child being passed in TODO. Curr never being
- *
- * */
 Tiger * Streak::extractMin(Tiger * prev, Tiger * curr) {
   if (isEmpty(curr)) {
     //We return a nullptr because the only time this will happen is
@@ -495,6 +515,57 @@ Tiger * Streak::extractMin(Tiger * prev, Tiger * curr) {
     return extractMin(curr, curr -> m_left);
   }
 }
+
+Tiger * Streak::removeCurrReplaceWithSuccessor(Tiger * tiger) {
+  if (isEmpty(tiger)) {
+    return tiger;
+  }
+  else if (hasRightChild(*tiger)) {
+    pair<Tiger *, Tiger *> extracted = extractMinNew(tiger -> m_right, tiger -> m_right -> m_left);
+
+    Tiger * newTree = rebalance(setHeight(constructTiger
+      ( tiger -> m_left
+      , extracted.second
+      , extracted.first)));
+
+    tiger = replace(constructTiger(nullptr, tiger, nullptr));
+
+    return newTree;
+  }
+  else if (hasLeftChild(*tiger)) {
+    return removeCurrReplaceWithPredecessor(tiger);
+  }
+  else {
+    delete tiger;
+    return nullptr;
+  }
+}
+
+pair<Tiger *, Tiger *> Streak::extractMinNew(Tiger * prev, Tiger * curr) {
+  if (isEmpty(curr)) {
+    //We return a nullptr because the only time this will happen is
+    //if this is the first iteration before any recursive calls, which
+    //means that prev does not have a left child, thus it does not have
+    //a min replacement.
+    return pair(nullptr, prev);
+  }
+  else if (!hasLeftChild(*curr)) {
+    return pair(rebalance(setHeight(constructTiger
+      ( nullptr
+      , prev
+      , prev -> m_right)))
+      , curr);
+  }
+  else {
+    pair<Tiger *, Tiger *> extracted = extractMinNew(curr, curr -> m_left);
+    return pair(rebalance(setHeight(constructTiger
+      ( extracted.first
+      , prev
+      , prev -> m_right)))
+      , extracted.second);
+  }
+}
+
 
 Tiger * Streak::extractMax(Tiger * tiger) {
   if (isEmpty(tiger)) {
@@ -522,5 +593,68 @@ Tiger * Streak::extractMax(Tiger * prev, Tiger * curr) {
   }
   else {
     return extractMax(curr, curr -> m_right);
+  }
+}
+
+Tiger * Streak::removeCurrReplaceWithPredecessor(Tiger * tiger) {
+  if (isEmpty(tiger)) {
+    return tiger;
+  }
+  else if (hasLeftChild(*tiger)) {
+    pair<Tiger *, Tiger *> extracted = extractMaxNew(tiger -> m_left, tiger -> m_left -> m_right);
+
+    Tiger * newTree = rebalance(setHeight(constructTiger
+      ( extracted.first
+      , extracted.second
+      , tiger -> m_right)));
+
+    tiger = replace(constructTiger(nullptr, tiger, nullptr));
+
+    return newTree;
+  }
+  else if (hasRightChild(*tiger)) {
+    return removeCurrReplaceWithSuccessor(tiger);
+  }
+  else {
+    delete tiger;
+    return nullptr;
+  }
+}
+
+pair<Tiger *, Tiger *> Streak::extractMaxNew(Tiger * prev, Tiger * curr) {
+  if (isEmpty(curr)) {
+    //We return a nullptr because the only time this will happen is
+    //if this is the first iteration before any recursive calls, which
+    //means that prev does not have a left child, thus it does not have
+    //a min replacement.
+    return pair(nullptr, prev);
+  }
+  else if (!hasRightChild(*curr)) {
+    return pair(rebalance(setHeight(constructTiger
+      ( prev -> m_left
+      , prev
+      , nullptr)))
+      , curr);
+  }
+  else {
+    pair<Tiger *, Tiger *> extracted = extractMaxNew(curr, curr -> m_right);
+    return pair(rebalance(setHeight(constructTiger
+      ( prev -> m_left
+      , prev
+      , extracted.first)))
+      , extracted.second);
+  }
+}
+
+uint Streak::countNumTigers() {
+  return countNumTigers(m_root);
+}
+
+uint Streak::countNumTigers(Tiger * tiger) {
+  if (isEmpty(tiger)) {
+    return 0;
+  }
+  else {
+    return 1 + countNumTigers(tiger -> m_left) + countNumTigers(tiger -> m_right);
   }
 }

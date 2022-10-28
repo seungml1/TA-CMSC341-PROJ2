@@ -158,5 +158,12 @@ class Streak{
     Tiger * addr(Tiger) const;
     Tiger rebalance(Tiger);
     Tiger * copyTiger(const Tiger &);
+    Tiger * removeCurrReplaceWithSuccessor(Tiger *);
+    pair<Tiger *, Tiger *> extractMinNew(Tiger *, Tiger *);
+    Tiger * removeCurrReplaceWithPredecessor(Tiger *);
+    pair<Tiger *, Tiger *> extractMaxNew(Tiger *, Tiger *);
+    Tiger * replace(Tiger * tiger);
+    uint countNumTigers();
+    uint countNumTigers(Tiger *);
 };
 #endif
